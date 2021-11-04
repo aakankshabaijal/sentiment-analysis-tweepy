@@ -3,9 +3,12 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 from tweepy import API
 from tweepy import Cursor
+from textblob import TextBlob #56% accuracy
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import re
 import twitter_credentials
 
 '''
@@ -105,6 +108,33 @@ class TweetAnalyzer():
     '''
     Functionality for analyzing and categorizing content from tweets.
     '''
+    def cleanTweet(self, tweet):
+        '''
+        Function to remove hyperlinks, special characters and remove duplicate spaces
+        '''
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+
+    def analyseSentiment(self, tweets):
+        '''
+        Function to classify the polarity of a tweet
+        '''    
+        for tweet in tweets:
+            analysis = TextBlob(self.cleanTweet(tweet))
+            return analysis.sentiment.polarity
+            # if analysis.sentiment.polarity > 0:
+            #     return 1
+            # elif analysis.sentiment.polarity == 0:
+            #     return 0
+            # else:
+            #     return -1
+    def analyseSentimentSubjectivity(self, tweets):
+        '''
+        Function to classify the subjectivity of a tweet
+        '''
+        for tweet in tweets:
+            analysis = TextBlob(self.cleanTweet(tweet))
+            return analysis.sentiment.subjectivity
+
     def tweetsToDataFrame(self, tweets):
         df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['tweets']) #extracting text from tweets
         df['id'] = np.array([tweet.id for tweet in tweets]) #extracting id from tweets
@@ -124,11 +154,25 @@ if __name__ == '__main__':
     # twitterStreamer = TwitterStreamer()
     # twitterStreamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
 
-    twitter_client = TwitterClient('elonmusk')
+    twitter_client = TwitterClient('POTUS')
     tweet_analyzer = TweetAnalyzer()
     api = twitter_client.getTwitterClientAPI()
 
-    tweets = api.user_timeline(screen_name="elonmusk", count=20)
+    tweets = api.user_timeline(screen_name="POTUS", count=100)
     df = tweet_analyzer.tweetsToDataFrame(tweets)
-    # print(df.head(10))
     
+    df['sentiment'] = np.array([tweet_analyzer.analyseSentiment(tweet) for tweet in df['tweets']])
+    df['subjectivity'] = np.array([tweet_analyzer.analyseSentimentSubjectivity(tweet) for tweet in df['tweets']])
+
+    print(df.head(20))
+    '''
+
+    #Time series plots
+
+    time_likes = pd.Series(data=df['likes'].values, index=df['date']) 
+    time_likes.plot(figsize=(16,4), label="likes", legend=True)
+    time_retweets = pd.Series(data=df['retweets'].values, index=df['date'])
+    time_retweets.plot(figsize=(16,4), label="retweets", legend=True)
+    plt.show()
+
+    '''
