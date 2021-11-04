@@ -106,8 +106,15 @@ class TweetAnalyzer():
     Functionality for analyzing and categorizing content from tweets.
     '''
     def tweetsToDataFrame(self, tweets):
-        df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['Tweets']) #extracting text from tweets
+        df = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['tweets']) #extracting text from tweets
+        df['id'] = np.array([tweet.id for tweet in tweets]) #extracting id from tweets
+        df['date'] = np.array([tweet.created_at for tweet in tweets]) #extracting date from tweets
+        df['likes'] = np.array([tweet.favorite_count for tweet in tweets]) 
+        df['retweets'] = np.array([tweet.retweet_count for tweet in tweets]) 
+        
         return df
+
+        
 
 if __name__ == '__main__':
     # hash_tag_list = ['apple', 'google', 'samsung']
@@ -123,5 +130,5 @@ if __name__ == '__main__':
 
     tweets = api.user_timeline(screen_name="elonmusk", count=20)
     df = tweet_analyzer.tweetsToDataFrame(tweets)
-    print(df.head(10))
+    # print(df.head(10))
     
